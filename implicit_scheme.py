@@ -2,6 +2,8 @@ import numpy as np
 from tabulate import tabulate
 
 # Задаем начальные и граничные условия
+
+
 def implicit_scheme(T=1.0, L=1.0, N=100, M=100, name="2-2.txt"):
     dx = L / N
     dt = T / M
@@ -16,25 +18,25 @@ def implicit_scheme(T=1.0, L=1.0, N=100, M=100, name="2-2.txt"):
 
     # Вычисляем прогоночные коэффициенты для каждого временного слоя
     for n in range(1, M+1):
-        d = np.zeros(N-1)
-        d[0] = u[n-1, 1] + dt/(dx**2) * u[n, 0]
-        d[-1] = u[n-1, -2] + dt/(dx**2) * u[n, -1]
-        for i in range(1, N-2):
-            d[i] = u[n-1, i+1]
+        ksi = np.zeros(N-1)
+        ksi[0] = u[n-1, 1] + dt/(dx ** 2) * u[n, 0]
+        ksi[-1] = u[n-1, -2] + dt/(dx ** 2) * u[n, -1]
+        for j in range(1, N - 2):
+            ksi[j] = u[n - 1, j + 1]
         # Решаем систему методом прогонки
-        c_star = np.zeros(N-1)
-        d_star = np.zeros(N-1)
-        c_star[0] = c[0] / b[0]
-        d_star[0] = d[0] / b[0]
-        for i in range(1, N-1):
-            c_star[i] = c[i] / (b[i] - a[i-1] * c_star[i-1])
-            d_star[i] = (d[i] - a[i-1] * d_star[i-1]) / \
-                (b[i] - a[i-1] * c_star[i-1])
+        alpha = np.zeros(N-1)
+        beta = np.zeros(N-1)
+        alpha[0] = c[0] / b[0]
+        beta[0] = ksi[0] / b[0]
+        for j in range(1, N - 1):
+            alpha[j] = -a[j] / (b[j] + c[j] * alpha[j - 1])
+            beta[j] = (ksi[j] - c[j - 1] * beta[j - 1]) / \
+                (b[j] + c[j] * alpha[j - 1])
         # Вычисляем решение на текущем временном слое
         u[n, -1] = np.exp(t[n] + 1)
         u[n, 0] = np.exp(t[n])
-        for i in range(N-2, 0, -1):
-            u[n, i] = d_star[i] - c_star[i] * u[n, i+1]
+        for j in range(N-2, 0, -1):
+            u[n, j] = beta[j] + alpha[j] * u[n, j + 1]
 
     np.set_printoptions(threshold=np.inf)
     f = open(name, "w")
