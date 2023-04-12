@@ -1,28 +1,40 @@
 import numpy as np
 from tabulate import tabulate
 
-# Задаем начальные и граничные условия
-def explicit_scheme(T=1.0, L=1.0, N=100, M=100, name="1-1.txt"):
-    dx = L / N
-    dt = T / M
-    x = np.linspace(0, L, N+1)
-    t = np.linspace(0, T, M+1)
-    u = np.zeros((M+1, N+1))
-    #u = np.arange(N*M).reshape(N, M)
-    u[0, :] = np.exp(x)
+start_x = 0
+end_x = 1
+start_t = 0
+end_t = 1
 
-    for n in range(M):
-        for i in range(1, N):
-            u[n+1, i] = u[n, i] + dt/dx**2 * \
-                (u[n, i+1] - 2*u[n, i] + u[n, i-1])
-        u[n+1, 0] = np.exp(t[n+1])
-        u[n+1, -1] = np.exp(t[n+1]+1)
+#Значение шага по t
+dt = 0.001
 
-    np.set_printoptions(threshold=np.inf)
-    f = open(name, "w")
-    print(tabulate(u), file=f)
+#Задаём значение шага по x, исходя из условия устойчивости 
+# h^2  >= 2 * dt
+h = 0.1
 
+#Число шагов по x
+N_j = int((end_x - start_x)/h + 1)
+#Число шагов по t
+N_n = int((end_t - start_t)/dt + 1)
+u = np.zeros([N_n, N_j])
 
-if __name__ == "__main__":
-    explicit_scheme(1.0, 1.0, 10, 10, "1-1.txt")
-    explicit_scheme(1.0, 1.0, 1000, 1000, "1-2.txt")
+#Задаём начальные условия
+for j in range(N_j):
+    u[0, j] = np.exp((j - 1) * h)
+
+for n in range(N_n - 1):
+    for j in range(2, N_j - 1):
+        u[n + 1, j] = u[n, j] + dt/(h ** 2) * \
+                (u[n, j + 1] - 2 * u[n, j] + u[n, j - 1])
+    u[n + 1, 0] = np.exp((n + 1) * dt)
+    u[n + 1, -1] = np.exp((n + 1) * dt + 1)
+
+f = open("list1.txt", "w")
+
+# for n in range(N_n - 1):
+#     for j in range(2, N_j - 1):
+#         print(u[n, j], end="\t", file=f)
+#     print(file=f)
+
+print(tabulate(u), file=f)
